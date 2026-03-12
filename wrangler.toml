@@ -1,0 +1,6 @@
+name = "gymsync"
+compatibility_date = "2025-12-01"
+pages_build_output_dir = "./dist"
+
+[vars]
+HEVY_API_BASE = "https://api.hevyapp.com"
