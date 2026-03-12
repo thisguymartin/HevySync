@@ -1,73 +1,111 @@
-# React + TypeScript + Vite
+# GymSync
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bridge between your trainer's workout spreadsheets and the [Hevy](https://www.hevyapp.com/) workout tracker. Upload a program, let AI parse it, and push routines directly to Hevy.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Spreadsheet Upload** — Drop an `.xlsx` / `.csv` file and AI extracts exercises, sets, reps, and weights
+- **Workout Generator** — Describe your goals and get an AI-generated program matched to Hevy exercise templates
+- **Hevy Integration** — Browse workouts, routines, and history; push parsed programs as Hevy routines
+- **Exercise Matching** — Fuzzy-matches exercise names to Hevy's template library with confidence scores
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React 19, React Router, Tailwind CSS, Zustand
+- **Backend:** Hono (on Cloudflare Workers / Pages)
+- **AI:** Anthropic Claude (Haiku 4.5)
+- **APIs:** Hevy API v1
 
-## Expanding the ESLint configuration
+## Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 18+
+- A [Cloudflare](https://dash.cloudflare.com/) account (for deployment)
+- A [Hevy API key](https://www.hevyapp.com/)
+- An [Anthropic API key](https://console.anthropic.com/)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Quick Start
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/thisguymartin/GymSync.git
+cd GymSync
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Create a `.dev.vars` file for local development:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+```
+
+Run the dev server:
+
+```bash
+npm run dev
+```
+
+The client runs on `http://localhost:5173` and the API on `http://localhost:8788`.
+
+Enter your Hevy API key in the Settings page within the app.
+
+## Environment Variables
+
+| Variable | Where | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | `.dev.vars` / CF secret | Anthropic API key for Claude |
+| `HEVY_API_BASE` | `wrangler.toml` | Hevy API base URL (default: `https://api.hevyapp.com`) |
+
+## Deployment
+
+Deploy to Cloudflare Pages:
+
+```bash
+npm run build
+npm run deploy
+```
+
+Set `ANTHROPIC_API_KEY` as a secret in the Cloudflare dashboard.
+
+## Project Structure
+
+```
+src/
+├── client/                  # React frontend
+│   ├── features/
+│   │   ├── workouts/        # Browse Hevy workouts
+│   │   ├── routines/        # Browse Hevy routines
+│   │   ├── history/         # Workout history & stats
+│   │   ├── upload/          # Spreadsheet upload & parse flow
+│   │   ├── generator/       # AI workout generator
+│   │   └── settings/        # API key configuration
+│   └── shared/              # Shared components, hooks, stores, types
+├── server/                  # Hono API (Cloudflare Workers)
+│   ├── features/
+│   │   ├── hevy/            # Hevy API client & routes
+│   │   ├── parse/           # AI spreadsheet parsing
+│   │   └── generator/       # AI workout generation
+│   └── shared/              # Shared types & utilities
+```
+
+## API Routes
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/hevy/exercises` | List exercise templates |
+| `GET` | `/api/hevy/workouts` | List workouts |
+| `POST` | `/api/hevy/workouts` | Create a workout |
+| `GET` | `/api/hevy/routines` | List routines |
+| `POST` | `/api/hevy/routines` | Create a routine |
+| `PUT` | `/api/hevy/routines/:id` | Update a routine |
+| `POST` | `/api/parse` | Parse spreadsheet with AI |
+| `POST` | `/api/generate` | Generate workout plan with AI |
+
+All `/api/hevy/*` routes require the `x-hevy-api-key` header.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)

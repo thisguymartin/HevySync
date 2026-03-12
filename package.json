@@ -1,7 +1,22 @@
 {
   "name": "gymsync",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Bridge between trainer workout spreadsheets and the Hevy workout tracker, powered by AI",
+  "license": "MIT",
+  "keywords": [
+    "workout-tracker",
+    "hevy",
+    "fitness",
+    "ai",
+    "cloudflare-workers",
+    "react",
+    "hono"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thisguymartin/GymSync.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "npm run build && concurrently -n client,server -c blue,green \"vite\" \"wrangler pages dev dist --port 8788\"",
@@ -14,7 +29,6 @@
     "deploy": "wrangler pages deploy dist"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "@hono/vite-dev-server": "^0.25.1",
     "hono": "^4.12.7",
     "react": "^19.2.0",

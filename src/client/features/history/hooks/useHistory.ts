@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useApi } from "@/shared/hooks/useApi.js";
 
 interface HistoryWorkout {
@@ -15,6 +15,37 @@ interface HistoryWorkout {
       reps: number | null;
     }>;
   }>;
+}
+
+interface WorkoutGroup {
+  key: string;
+  label: string;
+  workouts: HistoryWorkout[];
+}
+
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getWeekLabel(weekStart: Date): string {
+  const now = new Date();
+  const thisWeek = getWeekStart(now);
+  const lastWeek = new Date(thisWeek);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+
+  if (weekStart.getTime() === thisWeek.getTime()) return "This Week";
+  if (weekStart.getTime() === lastWeek.getTime()) return "Last Week";
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
 }
 
 export function useHistory() {
@@ -51,31 +82,47 @@ export function useHistory() {
     if (hevyApiKey) fetchHistory(1);
   }, [hevyApiKey, fetchHistory]);
 
-  // Compute stats
-  const stats = {
-    totalWorkouts: workouts.length,
-    totalVolume: workouts.reduce(
-      (total, w) =>
-        total +
-        w.exercises.reduce(
-          (sum, ex) =>
-            sum +
-            ex.sets.reduce(
-              (s, set) => s + (set.weight_kg || 0) * (set.reps || 0),
-              0
-            ),
-          0
-        ),
+  const groupedWorkouts = useMemo((): WorkoutGroup[] => {
+    const groups = new Map<string, WorkoutGroup>();
+    for (const w of workouts) {
+      const ws = getWeekStart(new Date(w.start_time));
+      const key = ws.toISOString().slice(0, 10);
+      if (!groups.has(key)) {
+        groups.set(key, { key, label: getWeekLabel(ws), workouts: [] });
+      }
+      groups.get(key)!.workouts.push(w);
+    }
+    return Array.from(groups.values());
+  }, [workouts]);
+
+  const stats = useMemo(() => {
+    const totalSets = workouts.reduce(
+      (sum, w) => sum + w.exercises.reduce((s, ex) => s + ex.sets.length, 0),
       0
-    ),
-    totalExercises: workouts.reduce(
-      (sum, w) => sum + w.exercises.length,
-      0
-    ),
-  };
+    );
+    return {
+      totalWorkouts: workouts.length,
+      totalVolume: workouts.reduce(
+        (total, w) =>
+          total +
+          w.exercises.reduce(
+            (sum, ex) =>
+              sum +
+              ex.sets.reduce(
+                (s, set) => s + (set.weight_kg || 0) * (set.reps || 0),
+                0
+              ),
+            0
+          ),
+        0
+      ),
+      totalSets,
+    };
+  }, [workouts]);
 
   return {
     workouts,
+    groupedWorkouts,
     stats,
     page,
     pageCount,

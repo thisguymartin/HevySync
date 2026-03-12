@@ -18,11 +18,30 @@ function DarkModeInit() {
   return null;
 }
 
+function TemplateLoader() {
+  const hevyApiKey = useAppStore((s) => s.hevyApiKey);
+  const templatesLoaded = useAppStore((s) => s.templatesLoaded);
+  const setExerciseTemplates = useAppStore((s) => s.setExerciseTemplates);
+
+  useEffect(() => {
+    if (!hevyApiKey || templatesLoaded) return;
+    fetch("/api/hevy/exercises/all", {
+      headers: { "x-hevy-api-key": hevyApiKey },
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => setExerciseTemplates(data.exercise_templates))
+      .catch(() => {});
+  }, [hevyApiKey, templatesLoaded, setExerciseTemplates]);
+
+  return null;
+}
+
 export function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <DarkModeInit />
+        <TemplateLoader />
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<UploadPage />} />

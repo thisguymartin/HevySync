@@ -4,11 +4,8 @@ import { logger } from "hono/logger";
 import { hevyRoute } from "./features/hevy/hevyRoute.js";
 import { parseRoute } from "./features/parse/parseRoute.js";
 import { generatorRoute } from "./features/generator/generatorRoute.js";
-
-type Bindings = {
-  ANTHROPIC_API_KEY: string;
-  HEVY_API_BASE: string;
-};
+import { HevyApiError } from "./features/hevy/hevyClient.js";
+import type { Bindings } from "./shared/types.js";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -18,14 +15,13 @@ app.use("/api/*", cors());
 // Error handler
 app.onError((err, c) => {
   console.error("Server error:", err);
+  const status = err instanceof HevyApiError ? err.status : 500;
   return c.json(
     {
       error: err.message || "Internal server error",
-      ...(err.name === "HevyApiError" && {
-        status: (err as unknown as { status: number }).status,
-      }),
+      ...(err instanceof HevyApiError && { status: err.status }),
     },
-    500
+    status as Parameters<typeof c.json>[1]
   );
 });
 

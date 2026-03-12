@@ -11,10 +11,15 @@ interface Workout {
     title: string;
     exercise_template_id: string;
     notes: string;
+    superset_id: number | null;
     sets: Array<{
+      index: number;
       type: string;
       weight_kg: number | null;
       reps: number | null;
+      rpe: number | null;
+      distance_meters: number | null;
+      duration_seconds: number | null;
     }>;
   }>;
 }

@@ -1,6 +1,7 @@
 import { GeneratorForm } from "./components/GeneratorForm.js";
 import { GeneratedPlan } from "./components/GeneratedPlan.js";
 import { useGenerator } from "./hooks/useGenerator.js";
+import { ErrorAlert } from "@/shared/components/ErrorAlert.js";
 
 export function GeneratorPage() {
   const { routines, isGenerating, isPushing, error, pushResult, generate, pushToHevy } =
@@ -15,11 +16,7 @@ export function GeneratorPage() {
         </p>
       </div>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-        </div>
-      )}
+      <ErrorAlert error={error} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>

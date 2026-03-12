@@ -4,6 +4,7 @@ import { ParsedWorkoutPreview } from "./components/ParsedWorkoutPreview.js";
 import { PushToHevyButton } from "./components/PushToHevyButton.js";
 import { useFileUpload } from "./hooks/useFileUpload.js";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner.js";
+import { ErrorAlert } from "@/shared/components/ErrorAlert.js";
 
 export function UploadPage() {
   const {
@@ -62,12 +63,7 @@ export function UploadPage() {
         })}
       </div>
 
-      {/* Error display */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-        </div>
-      )}
+      <ErrorAlert error={error} />
 
       {/* Step content */}
       {step === "upload" && <DropZone onFileSelected={parseFile} />}

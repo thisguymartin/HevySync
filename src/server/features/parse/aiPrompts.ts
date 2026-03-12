@@ -18,10 +18,12 @@ IMPORTANT RULES:
 - Identify supersets and group them
 - Extract any coach notes
 
-Return ONLY valid JSON, no markdown fences or extra text.`;
+You MUST respond with ONLY a valid JSON object. Do NOT include any text, explanation, or markdown before or after the JSON. Start your response with { and end with }.`;
 
 export function buildParseUserPrompt(rows: string[][]): string {
-  const csvText = rows.map((row) => row.join("\t")).join("\n");
+  // Cap rows to stay within model context window (~24K tokens)
+  const limitedRows = rows.slice(0, 150);
+  const csvText = limitedRows.map((row) => row.join("\t")).join("\n");
   return `Parse this spreadsheet data into a structured workout program.
 
 Raw spreadsheet data (tab-separated):
@@ -66,7 +68,7 @@ Design programs following evidence-based principles:
 - Balanced push/pull ratios
 - Include compound movements as primary lifts
 
-Return ONLY valid JSON, no markdown fences or extra text.`;
+You MUST respond with ONLY a valid JSON object. Do NOT include any text, explanation, or markdown before or after the JSON. Start your response with { and end with }.`;
 
 export function buildGenerateUserPrompt(
   params: {

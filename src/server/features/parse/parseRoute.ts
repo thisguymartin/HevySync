@@ -2,45 +2,10 @@ import { Hono } from "hono";
 import { PARSE_SYSTEM_PROMPT, buildParseUserPrompt } from "./aiPrompts.js";
 import { matchExercise } from "../hevy/exerciseMatcher.js";
 import { getAllExerciseTemplates } from "../hevy/hevyClient.js";
-
-type Bindings = {
-  ANTHROPIC_API_KEY: string;
-};
+import { runAiJsonCompletion } from "../../shared/aiClient.js";
+import type { Bindings } from "../../shared/types.js";
 
 const app = new Hono<{ Bindings: Bindings }>();
-
-async function callClaude(
-  apiKey: string,
-  system: string,
-  userMessage: string
-): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      system,
-      messages: [{ role: "user", content: userMessage }],
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Anthropic API error ${res.status}: ${body}`);
-  }
-
-  const data = (await res.json()) as {
-    content: Array<{ type: string; text: string }>;
-  };
-  const textBlock = data.content.find((b) => b.type === "text");
-  if (!textBlock) throw new Error("No text in AI response");
-  return textBlock.text;
-}
 
 app.post("/", async (c) => {
   const { rows, fileName } = await c.req.json<{
@@ -52,36 +17,24 @@ app.post("/", async (c) => {
     return c.json({ error: "No spreadsheet data provided" }, 400);
   }
 
-  const apiKey = c.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === "your-key-here") {
-    return c.json({ error: "ANTHROPIC_API_KEY not configured" }, 500);
-  }
-
-  const rawText = await callClaude(
-    apiKey,
-    PARSE_SYSTEM_PROMPT,
-    buildParseUserPrompt(rows)
-  );
-
   let parsed: Record<string, unknown>;
   try {
-    let jsonText = rawText.trim();
-    if (jsonText.startsWith("```")) {
-      jsonText = jsonText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-    }
-    parsed = JSON.parse(jsonText);
-  } catch {
-    return c.json(
-      { error: "Failed to parse AI response as JSON", raw: rawText },
-      500
+    parsed = await runAiJsonCompletion(
+      c.env.AI,
+      PARSE_SYSTEM_PROMPT,
+      buildParseUserPrompt(rows),
+      { maxTokens: 16384 },
     );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "AI parsing failed";
+    return c.json({ error: message }, 500);
   }
 
   // Try to match exercises to Hevy templates if API key provided
   const hevyApiKey = c.req.header("x-hevy-api-key");
   if (hevyApiKey) {
     try {
-      const templates = await getAllExerciseTemplates(hevyApiKey);
+      const templates = await getAllExerciseTemplates(c.env.HEVY_API_BASE, hevyApiKey);
       const program = parsed as {
         weeks?: Array<{
           blocks?: Array<{

@@ -1,5 +1,3 @@
-const HEVY_BASE = "https://api.hevyapp.com";
-
 function sanitizeNotes(text: string): string {
   return text.replace(/@/g, "(at)");
 }
@@ -29,11 +27,12 @@ export class HevyApiError extends Error {
 }
 
 async function hevyFetch(
+  baseUrl: string,
   path: string,
   apiKey: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const url = `${HEVY_BASE}${path}`;
+  const url = `${baseUrl}${path}`;
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -69,11 +68,13 @@ async function hevyFetch(
 // ── Exercise Templates ──
 
 export async function getExerciseTemplates(
+  baseUrl: string,
   apiKey: string,
   page = 1,
   pageSize = 100
 ) {
   const res = await hevyFetch(
+    baseUrl,
     `/v1/exercise_templates?page=${page}&page_size=${pageSize}`,
     apiKey
   );
@@ -91,7 +92,7 @@ export async function getExerciseTemplates(
   }>;
 }
 
-export async function getAllExerciseTemplates(apiKey: string) {
+export async function getAllExerciseTemplates(baseUrl: string, apiKey: string) {
   const templates: Array<{
     id: string;
     title: string;
@@ -105,7 +106,7 @@ export async function getAllExerciseTemplates(apiKey: string) {
   let pageCount = 1;
 
   while (page <= pageCount) {
-    const res = await getExerciseTemplates(apiKey, page, 100);
+    const res = await getExerciseTemplates(baseUrl, apiKey, page, 100);
     templates.push(...res.exercise_templates);
     pageCount = res.page_count;
     page++;
@@ -117,11 +118,13 @@ export async function getAllExerciseTemplates(apiKey: string) {
 // ── Workouts ──
 
 export async function listWorkouts(
+  baseUrl: string,
   apiKey: string,
   page = 1,
   pageSize = 10
 ) {
   const res = await hevyFetch(
+    baseUrl,
     `/v1/workouts?page=${page}&page_size=${pageSize}`,
     apiKey
   );
@@ -132,12 +135,13 @@ export async function listWorkouts(
   }>;
 }
 
-export async function getWorkout(apiKey: string, workoutId: string) {
-  const res = await hevyFetch(`/v1/workouts/${workoutId}`, apiKey);
+export async function getWorkout(baseUrl: string, apiKey: string, workoutId: string) {
+  const res = await hevyFetch(baseUrl, `/v1/workouts/${workoutId}`, apiKey);
   return res.json();
 }
 
 export async function createWorkout(
+  baseUrl: string,
   apiKey: string,
   workout: {
     title: string;
@@ -161,7 +165,7 @@ export async function createWorkout(
   }
 ) {
   const sanitized = sanitizePayload(workout);
-  const res = await hevyFetch(`/v1/workouts`, apiKey, {
+  const res = await hevyFetch(baseUrl, `/v1/workouts`, apiKey, {
     method: "POST",
     body: JSON.stringify({ workout: sanitized }),
   });
@@ -171,11 +175,13 @@ export async function createWorkout(
 // ── Routines ──
 
 export async function listRoutines(
+  baseUrl: string,
   apiKey: string,
   page = 1,
   pageSize = 10
 ) {
   const res = await hevyFetch(
+    baseUrl,
     `/v1/routines?page=${page}&page_size=${pageSize}`,
     apiKey
   );
@@ -186,12 +192,13 @@ export async function listRoutines(
   }>;
 }
 
-export async function getRoutine(apiKey: string, routineId: string) {
-  const res = await hevyFetch(`/v1/routines/${routineId}`, apiKey);
+export async function getRoutine(baseUrl: string, apiKey: string, routineId: string) {
+  const res = await hevyFetch(baseUrl, `/v1/routines/${routineId}`, apiKey);
   return res.json();
 }
 
 export async function createRoutine(
+  baseUrl: string,
   apiKey: string,
   routine: {
     title: string;
@@ -213,7 +220,7 @@ export async function createRoutine(
   }
 ) {
   const sanitized = sanitizePayload(routine);
-  const res = await hevyFetch(`/v1/routines`, apiKey, {
+  const res = await hevyFetch(baseUrl, `/v1/routines`, apiKey, {
     method: "POST",
     body: JSON.stringify({ routine: sanitized }),
   });
@@ -221,6 +228,7 @@ export async function createRoutine(
 }
 
 export async function updateRoutine(
+  baseUrl: string,
   apiKey: string,
   routineId: string,
   routine: {
@@ -243,7 +251,7 @@ export async function updateRoutine(
   }
 ) {
   const sanitized = sanitizePayload(routine);
-  const res = await hevyFetch(`/v1/routines/${routineId}`, apiKey, {
+  const res = await hevyFetch(baseUrl, `/v1/routines/${routineId}`, apiKey, {
     method: "PUT",
     body: JSON.stringify({ routine: sanitized }),
   });
@@ -252,8 +260,8 @@ export async function updateRoutine(
 
 // ── Routine Folders ──
 
-export async function listRoutineFolders(apiKey: string) {
-  const res = await hevyFetch(`/v1/routine_folders?page=1&page_size=100`, apiKey);
+export async function listRoutineFolders(baseUrl: string, apiKey: string) {
+  const res = await hevyFetch(baseUrl, `/v1/routine_folders?page=1&page_size=100`, apiKey);
   return res.json() as Promise<{
     page: number;
     page_count: number;
@@ -262,10 +270,11 @@ export async function listRoutineFolders(apiKey: string) {
 }
 
 export async function createRoutineFolder(
+  baseUrl: string,
   apiKey: string,
   title: string
 ) {
-  const res = await hevyFetch(`/v1/routine_folders`, apiKey, {
+  const res = await hevyFetch(baseUrl, `/v1/routine_folders`, apiKey, {
     method: "POST",
     body: JSON.stringify({ routine_folder: { title } }),
   });
