@@ -4,6 +4,7 @@ interface FilePreviewProps {
   onConfirm: () => void;
   onBack: () => void;
   isLoading: boolean;
+  parseStatus?: string | null;
 }
 
 export function FilePreview({
@@ -12,6 +13,7 @@ export function FilePreview({
   onConfirm,
   onBack,
   isLoading,
+  parseStatus,
 }: FilePreviewProps) {
   const displayRows = rows.slice(0, 50); // Show first 50 rows
 
@@ -21,7 +23,7 @@ export function FilePreview({
         <div>
           <h3 className="font-semibold text-lg">{fileName}</h3>
           <p className="text-sm text-gray-500">
-            {rows.length} rows, {rows[0]?.length || 0} columns
+            Ready to upload and normalize on the server
           </p>
         </div>
         <div className="flex gap-2">
@@ -39,44 +41,51 @@ export function FilePreview({
             {isLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Parsing with AI...
+                {parseStatus || "Parsing..."}
               </>
             ) : (
-              "Parse with AI"
+              "Parse File"
             )}
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
-        <table className="min-w-full text-sm">
-          <tbody>
-            {displayRows.map((row, i) => (
-              <tr
-                key={i}
-                className={
-                  i % 2 === 0
-                    ? "bg-white dark:bg-gray-900"
-                    : "bg-gray-50 dark:bg-gray-950"
-                }
-              >
-                <td className="px-2 py-1 text-gray-400 text-xs sticky left-0 bg-inherit">
-                  {i + 1}
-                </td>
-                {row.map((cell, j) => (
-                  <td
-                    key={j}
-                    className="px-3 py-1.5 whitespace-nowrap max-w-[200px] truncate"
-                    title={String(cell)}
-                  >
-                    {String(cell)}
+      {displayRows.length > 0 ? (
+        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+          <table className="min-w-full text-sm">
+            <tbody>
+              {displayRows.map((row, i) => (
+                <tr
+                  key={i}
+                  className={
+                    i % 2 === 0
+                      ? "bg-white dark:bg-gray-900"
+                      : "bg-gray-50 dark:bg-gray-950"
+                  }
+                >
+                  <td className="px-2 py-1 text-gray-400 text-xs sticky left-0 bg-inherit">
+                    {i + 1}
                   </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  {row.map((cell, j) => (
+                    <td
+                      key={j}
+                      className="px-3 py-1.5 whitespace-nowrap max-w-[200px] truncate"
+                      title={String(cell)}
+                    >
+                      {String(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 text-sm text-gray-500">
+          The original file will be parsed by the Worker so multi-sheet and
+          horizontal week layouts are preserved.
+        </div>
+      )}
 
       {rows.length > 50 && (
         <p className="text-sm text-gray-500 text-center">

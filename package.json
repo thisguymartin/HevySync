@@ -1,8 +1,8 @@
 {
-  "name": "gymsync",
+  "name": "hevysync",
   "private": true,
   "version": "0.1.0",
-  "description": "Bridge between trainer workout spreadsheets and the Hevy workout tracker, powered by AI",
+  "description": "Personal Hevy sync tool for parsing workout spreadsheets and managing routines",
   "license": "MIT",
   "keywords": [
     "workout-tracker",
@@ -19,7 +19,8 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "npm run build && concurrently -n client,server -c blue,green \"vite\" \"wrangler pages dev dist --port 8788\"",
+    "dev": "npm run dev:dotenvx",
+    "dev:dotenvx": "dotenvx run -- sh scripts/dev-dotenvx.sh",
     "dev:client": "vite",
     "dev:server": "wrangler pages dev dist --port 8788",
     "build": "tsc -b && vite build",
@@ -29,6 +30,8 @@
     "deploy": "wrangler pages deploy dist"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@hono/vite-dev-server": "^0.25.1",
     "hono": "^4.12.7",
     "react": "^19.2.0",

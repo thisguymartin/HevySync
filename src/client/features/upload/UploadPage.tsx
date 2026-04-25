@@ -1,10 +1,13 @@
 import { DropZone } from "./components/DropZone.js";
 import { FilePreview } from "./components/FilePreview.js";
 import { ParsedWorkoutPreview } from "./components/ParsedWorkoutPreview.js";
-import { PushToHevyButton } from "./components/PushToHevyButton.js";
+import { OrganizePage } from "./components/OrganizePage.js";
+import { SubmitProgress } from "./components/SubmitProgress.js";
 import { useFileUpload } from "./hooks/useFileUpload.js";
-import { LoadingSpinner } from "@/shared/components/LoadingSpinner.js";
 import { ErrorAlert } from "@/shared/components/ErrorAlert.js";
+
+const STEP_KEYS = ["upload", "preview", "parsed", "organize", "pushing"] as const;
+const STEP_LABELS = ["Upload", "Preview", "Review", "Organize", "Submit"];
 
 export function UploadPage() {
   const {
@@ -14,11 +17,13 @@ export function UploadPage() {
     parsedProgram,
     warnings,
     isLoading,
+    parseStatus,
     error,
     pushResult,
     parseFile,
     sendToParse,
-    pushToHevy,
+    goToOrganize,
+    submitToHevy,
     reset,
     setStep,
   } = useFileUpload();
@@ -34,8 +39,8 @@ export function UploadPage() {
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 text-sm">
-        {["Upload", "Preview", "Review", "Done"].map((label, i) => {
-          const stepIndex = ["upload", "preview", "parsed", "pushing"].indexOf(step);
+        {STEP_LABELS.map((label, i) => {
+          const stepIndex = STEP_KEYS.indexOf(step);
           const isActive = i === stepIndex;
           const isDone = i < stepIndex;
           return (
@@ -63,9 +68,8 @@ export function UploadPage() {
         })}
       </div>
 
-      <ErrorAlert error={error} />
+      <ErrorAlert error={step === "parsed" || step === "organize" ? null : error} />
 
-      {/* Step content */}
       {step === "upload" && <DropZone onFileSelected={parseFile} />}
 
       {step === "preview" && file && (
@@ -75,27 +79,24 @@ export function UploadPage() {
           onConfirm={sendToParse}
           onBack={reset}
           isLoading={isLoading}
+          parseStatus={parseStatus}
         />
       )}
 
       {step === "parsed" && parsedProgram && (
         <ParsedWorkoutPreview
-          program={parsedProgram}
           warnings={warnings}
-          onPush={pushToHevy}
+          onContinue={goToOrganize}
           onBack={() => setStep("preview")}
         />
       )}
 
-      {step === "pushing" && !pushResult && (
-        <div className="text-center py-12">
-          <LoadingSpinner className="mb-4" />
-          <p className="text-gray-500">Pushing routines to Hevy...</p>
-        </div>
+      {step === "organize" && (
+        <OrganizePage onBack={() => setStep("parsed")} onSubmit={submitToHevy} />
       )}
 
-      {step === "pushing" && pushResult && (
-        <PushToHevyButton pushResult={pushResult} onReset={reset} />
+      {step === "pushing" && (
+        <SubmitProgress isFinished={pushResult !== null} onReset={reset} />
       )}
     </div>
   );

@@ -16,6 +16,7 @@ export function RoutinesPage() {
     return (
       <RoutineDetail
         routine={selectedRoutine}
+        onSaved={setSelectedRoutine}
         onClose={() => setSelectedRoutine(null)}
       />
     );

@@ -16,6 +16,7 @@ export function WorkoutsPage() {
     return (
       <WorkoutDetail
         workout={selectedWorkout}
+        onSaved={setSelectedWorkout}
         onClose={() => setSelectedWorkout(null)}
       />
     );

@@ -30,6 +30,7 @@ const ALIASES: Record<string, string> = {
   bp: "bench press",
   ohp: "overhead press",
   cgbp: "close grip bench press",
+  prress: "press",
   sldl: "stiff leg deadlift",
   ghr: "glute ham raise",
   "t-bar": "t-bar row",
@@ -66,6 +67,8 @@ const ALIASES: Record<string, string> = {
   pushup: "push up",
 };
 
+const STOP_WORDS = new Set(["at", "for", "in", "of", "on", "the", "to", "with"]);
+
 function normalize(text: string): string {
   let lower = text.toLowerCase().trim();
   // Replace common abbreviations
@@ -84,7 +87,7 @@ function tokenize(text: string): Set<string> {
   return new Set(
     normalize(text)
       .split(/[\s\-_,/]+/)
-      .filter((t) => t.length > 1)
+      .filter((t) => t.length > 1 && !STOP_WORDS.has(t))
   );
 }
 

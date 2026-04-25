@@ -1,111 +1,82 @@
-# GymSync
+# HevySync
 
-Bridge between your trainer's workout spreadsheets and the [Hevy](https://www.hevyapp.com/) workout tracker. Upload a program, let AI parse it, and push routines directly to Hevy.
+Personal sync tool for [Hevy](https://www.hevyapp.com/). Upload a workout spreadsheet, review the parsed routine draft, edit the details, and push routines to Hevy.
 
 ## Features
 
-- **Spreadsheet Upload** — Drop an `.xlsx` / `.csv` file and AI extracts exercises, sets, reps, and weights
-- **Workout Generator** — Describe your goals and get an AI-generated program matched to Hevy exercise templates
-- **Hevy Integration** — Browse workouts, routines, and history; push parsed programs as Hevy routines
-- **Exercise Matching** — Fuzzy-matches exercise names to Hevy's template library with confidence scores
+- Spreadsheet import for `.xlsx`, `.xls`, and `.csv`
+- Server-side workbook normalization for multi-sheet and horizontal week layouts
+- OpenAI-assisted parsing with deterministic fallback
+- Hevy exercise matching and custom exercise creation
+- Routine creation and routine/workout editing through Hevy's API
+- Cloudflare Pages / Wrangler deployment
 
 ## Tech Stack
 
-- **Frontend:** React 19, React Router, Tailwind CSS, Zustand
-- **Backend:** Hono (on Cloudflare Workers / Pages)
-- **AI:** Anthropic Claude (Haiku 4.5)
-- **APIs:** Hevy API v1
+- Frontend: React 19, React Router, Tailwind CSS, Zustand
+- Backend: Hono on Cloudflare Pages Functions
+- APIs: Hevy API v1, OpenAI Chat Completions structured JSON output
+- Deployment: Wrangler
 
-## Prerequisites
+## Environment
 
-- Node.js 18+
-- A [Cloudflare](https://dash.cloudflare.com/) account (for deployment)
-- A [Hevy API key](https://www.hevyapp.com/)
-- An [Anthropic API key](https://console.anthropic.com/)
+Use two secrets:
 
-## Quick Start
+| Variable | Description |
+|---|---|
+| `HEVY_API_KEY` | Hevy developer API key |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `OPENAI_MODEL` | Optional, defaults to `gpt-5-mini` |
+| `HEVY_API_BASE` | Optional, defaults to `https://api.hevyapp.com` |
+
+Existing local aliases are also supported: `HEAVY_API` and `OPENAI_KEY`.
+
+For encrypted dotenvx files, run the app through dotenvx so encrypted values are decrypted before Wrangler starts:
 
 ```bash
-git clone https://github.com/thisguymartin/GymSync.git
-cd GymSync
+npm run dev:dotenvx
+```
+
+## Development
+
+```bash
 npm install
+npm run build
+npm run dev:dotenvx
 ```
 
-Create a `.dev.vars` file for local development:
-
-```
-ANTHROPIC_API_KEY=your-anthropic-api-key-here
-```
-
-Run the dev server:
-
-```bash
-npm run dev
-```
-
-The client runs on `http://localhost:5173` and the API on `http://localhost:8788`.
-
-Enter your Hevy API key in the Settings page within the app.
-
-## Environment Variables
-
-| Variable | Where | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | `.dev.vars` / CF secret | Anthropic API key for Claude |
-| `HEVY_API_BASE` | `wrangler.toml` | Hevy API base URL (default: `https://api.hevyapp.com`) |
+The Vite client runs on `http://localhost:5173`; the Pages Functions API runs on `http://localhost:8788`.
 
 ## Deployment
 
-Deploy to Cloudflare Pages:
+Set production secrets in Cloudflare:
+
+```bash
+wrangler pages secret put HEVY_API_KEY
+wrangler pages secret put OPENAI_API_KEY
+```
+
+Then build and deploy:
 
 ```bash
 npm run build
 npm run deploy
 ```
 
-Set `ANTHROPIC_API_KEY` as a secret in the Cloudflare dashboard.
-
-## Project Structure
-
-```
-src/
-├── client/                  # React frontend
-│   ├── features/
-│   │   ├── workouts/        # Browse Hevy workouts
-│   │   ├── routines/        # Browse Hevy routines
-│   │   ├── history/         # Workout history & stats
-│   │   ├── upload/          # Spreadsheet upload & parse flow
-│   │   ├── generator/       # AI workout generator
-│   │   └── settings/        # API key configuration
-│   └── shared/              # Shared components, hooks, stores, types
-├── server/                  # Hono API (Cloudflare Workers)
-│   ├── features/
-│   │   ├── hevy/            # Hevy API client & routes
-│   │   ├── parse/           # AI spreadsheet parsing
-│   │   └── generator/       # AI workout generation
-│   └── shared/              # Shared types & utilities
-```
-
 ## API Routes
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/health` | Health check |
-| `GET` | `/api/hevy/exercises` | List exercise templates |
-| `GET` | `/api/hevy/workouts` | List workouts |
-| `POST` | `/api/hevy/workouts` | Create a workout |
-| `GET` | `/api/hevy/routines` | List routines |
-| `POST` | `/api/hevy/routines` | Create a routine |
-| `PUT` | `/api/hevy/routines/:id` | Update a routine |
-| `POST` | `/api/parse` | Parse spreadsheet with AI |
-| `POST` | `/api/generate` | Generate workout plan with AI |
+| `GET` | `/api/setup` | Check server secret configuration |
+| `GET` | `/api/hevy/user` | Validate the configured Hevy key |
+| `GET` | `/api/hevy/exercises/all` | Load Hevy exercise templates |
+| `POST` | `/api/hevy/exercises/custom` | Create a custom Hevy exercise |
+| `GET/POST` | `/api/hevy/routines` | List or create routines |
+| `GET/PUT` | `/api/hevy/routines/:id` | Read or update a routine |
+| `GET/POST` | `/api/hevy/workouts` | List or create workouts |
+| `GET/PUT` | `/api/hevy/workouts/:id` | Read or update a workout |
+| `GET` | `/api/hevy/workouts/events` | Read Hevy workout sync events |
+| `POST` | `/api/imports/parse` | Upload and parse a workout file |
+| `POST` | `/api/imports/push-routines` | Create parsed routines in Hevy |
 
-All `/api/hevy/*` routes require the `x-hevy-api-key` header.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## License
-
-[MIT](LICENSE)
+All Hevy API calls use server-side secrets; the browser does not store a Hevy API key.

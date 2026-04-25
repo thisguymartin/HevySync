@@ -1,27 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApi } from "@/shared/hooks/useApi.js";
-
-interface Routine {
-  id: string;
-  title: string;
-  folder_id: number | null;
-  notes: string;
-  exercises: Array<{
-    title: string;
-    exercise_template_id: string;
-    notes: string;
-    superset_id: number | null;
-    sets: Array<{
-      type: string;
-      weight_kg: number | null;
-      reps: number | null;
-    }>;
-  }>;
-}
+import type { HevyRoutine } from "@/shared/types/index.js";
 
 export function useRoutines() {
-  const { apiFetch, hevyApiKey } = useApi();
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const { apiFetch } = useApi();
+  const [routines, setRoutines] = useState<HevyRoutine[]>([]);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +12,11 @@ export function useRoutines() {
 
   const fetchRoutines = useCallback(
     async (p: number) => {
-      if (!hevyApiKey) return;
       setIsLoading(true);
       setError(null);
       try {
         const data = await apiFetch<{
-          routines: Routine[];
+          routines: HevyRoutine[];
           page_count: number;
         }>(`/api/hevy/routines?page=${p}&pageSize=10`);
         setRoutines(data.routines);
@@ -46,12 +28,14 @@ export function useRoutines() {
         setIsLoading(false);
       }
     },
-    [apiFetch, hevyApiKey]
+    [apiFetch]
   );
 
   useEffect(() => {
-    if (hevyApiKey) fetchRoutines(1);
-  }, [hevyApiKey, fetchRoutines]);
+    queueMicrotask(() => {
+      fetchRoutines(1);
+    });
+  }, [fetchRoutines]);
 
   return {
     routines,

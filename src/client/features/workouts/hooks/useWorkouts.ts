@@ -1,32 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApi } from "@/shared/hooks/useApi.js";
-
-interface Workout {
-  id: string;
-  title: string;
-  description: string | null;
-  start_time: string;
-  end_time: string;
-  exercises: Array<{
-    title: string;
-    exercise_template_id: string;
-    notes: string;
-    superset_id: number | null;
-    sets: Array<{
-      index: number;
-      type: string;
-      weight_kg: number | null;
-      reps: number | null;
-      rpe: number | null;
-      distance_meters: number | null;
-      duration_seconds: number | null;
-    }>;
-  }>;
-}
+import type { HevyWorkout } from "@/shared/types/index.js";
 
 export function useWorkouts() {
-  const { apiFetch, hevyApiKey } = useApi();
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const { apiFetch } = useApi();
+  const [workouts, setWorkouts] = useState<HevyWorkout[]>([]);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,12 +12,11 @@ export function useWorkouts() {
 
   const fetchWorkouts = useCallback(
     async (p: number) => {
-      if (!hevyApiKey) return;
       setIsLoading(true);
       setError(null);
       try {
         const data = await apiFetch<{
-          workouts: Workout[];
+          workouts: HevyWorkout[];
           page_count: number;
         }>(`/api/hevy/workouts?page=${p}&pageSize=10`);
         setWorkouts(data.workouts);
@@ -51,12 +28,14 @@ export function useWorkouts() {
         setIsLoading(false);
       }
     },
-    [apiFetch, hevyApiKey]
+    [apiFetch]
   );
 
   useEffect(() => {
-    if (hevyApiKey) fetchWorkouts(1);
-  }, [hevyApiKey, fetchWorkouts]);
+    queueMicrotask(() => {
+      fetchWorkouts(1);
+    });
+  }, [fetchWorkouts]);
 
   return {
     workouts,

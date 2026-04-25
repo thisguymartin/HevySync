@@ -29,8 +29,10 @@ export interface HevySet {
   type: SetType;
   weight_kg: number | null;
   reps: number | null;
+  rep_range?: { start: number | null; end: number | null } | null;
   distance_meters: number | null;
   duration_seconds: number | null;
+  custom_metric?: number | null;
   rpe: number | null;
 }
 
@@ -40,6 +42,7 @@ export interface HevyExercise {
   notes: string;
   exercise_template_id: string;
   superset_id: number | null;
+  rest_seconds?: number | null;
   sets: HevySet[];
 }
 
@@ -80,6 +83,10 @@ export interface ParsedSet {
   type: SetType;
   weight_kg: number | null;
   reps: number | null;
+  rep_range: { start: number | null; end: number | null } | null;
+  distance_meters: number | null;
+  duration_seconds: number | null;
+  custom_metric: number | null;
   rpe: number | null;
 }
 
@@ -91,8 +98,10 @@ export interface ParsedExercise {
   notes: string;
   isSuperset: boolean;
   supersetGroup: number | null;
+  restSeconds: number | null;
   parsedSets: ParsedSet[];
   matchedTemplate: ExerciseTemplate | null;
+  selectedTemplateId: string | null;
   matchConfidence: number;
   alternatives: ExerciseTemplate[];
 }
@@ -100,16 +109,19 @@ export interface ParsedExercise {
 export interface ParsedBlock {
   blockNumber: number;
   blockName: string;
+  notes: string;
   exercises: ParsedExercise[];
 }
 
 export interface ParsedWeek {
   weekNumber: number;
+  sourceSheet: string;
   blocks: ParsedBlock[];
 }
 
 export interface ParsedProgram {
   programName: string;
+  sourceFileName: string;
   weeks: ParsedWeek[];
   warnings: string[];
 }

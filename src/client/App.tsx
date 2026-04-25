@@ -19,19 +19,16 @@ function DarkModeInit() {
 }
 
 function TemplateLoader() {
-  const hevyApiKey = useAppStore((s) => s.hevyApiKey);
   const templatesLoaded = useAppStore((s) => s.templatesLoaded);
   const setExerciseTemplates = useAppStore((s) => s.setExerciseTemplates);
 
   useEffect(() => {
-    if (!hevyApiKey || templatesLoaded) return;
-    fetch("/api/hevy/exercises/all", {
-      headers: { "x-hevy-api-key": hevyApiKey },
-    })
+    if (templatesLoaded) return;
+    fetch("/api/hevy/exercises/all")
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => setExerciseTemplates(data.exercise_templates))
       .catch(() => {});
-  }, [hevyApiKey, templatesLoaded, setExerciseTemplates]);
+  }, [templatesLoaded, setExerciseTemplates]);
 
   return null;
 }

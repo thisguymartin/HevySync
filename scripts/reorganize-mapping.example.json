@@ -1,0 +1,8 @@
+{
+  "weekFolderTitleFormat": "Week {n}",
+  "routines": [
+    { "id": "REPLACE_WITH_ROUTINE_ID", "newTitle": "Push A", "week": 1 },
+    { "id": "REPLACE_WITH_ROUTINE_ID", "newTitle": "Pull A", "week": 1 },
+    { "id": "REPLACE_WITH_ROUTINE_ID", "newTitle": "Legs A", "week": 1 }
+  ]
+}

@@ -15,8 +15,11 @@ dist-ssr
 .wrangler
 
 # Environment
-.env
-.env.local
+.env.keys
+
+# One-off Hevy reorganize script artifacts
+scripts/.hevy-inventory.json
+scripts/reorganize-mapping.json
 
 # Claude Code
 .claude/

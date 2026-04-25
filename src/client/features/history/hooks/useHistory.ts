@@ -49,7 +49,7 @@ function getWeekLabel(weekStart: Date): string {
 }
 
 export function useHistory() {
-  const { apiFetch, hevyApiKey } = useApi();
+  const { apiFetch } = useApi();
   const [workouts, setWorkouts] = useState<HistoryWorkout[]>([]);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -58,7 +58,6 @@ export function useHistory() {
 
   const fetchHistory = useCallback(
     async (p: number) => {
-      if (!hevyApiKey) return;
       setIsLoading(true);
       setError(null);
       try {
@@ -75,12 +74,14 @@ export function useHistory() {
         setIsLoading(false);
       }
     },
-    [apiFetch, hevyApiKey]
+    [apiFetch]
   );
 
   useEffect(() => {
-    if (hevyApiKey) fetchHistory(1);
-  }, [hevyApiKey, fetchHistory]);
+    queueMicrotask(() => {
+      fetchHistory(1);
+    });
+  }, [fetchHistory]);
 
   const groupedWorkouts = useMemo((): WorkoutGroup[] => {
     const groups = new Map<string, WorkoutGroup>();
