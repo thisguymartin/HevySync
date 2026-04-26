@@ -133,6 +133,12 @@ export interface ParseRequest {
   fileName: string;
 }
 
+export interface TextImportRequest {
+  source: "text";
+  programName?: string;
+  text: string;
+}
+
 export interface ParseResponse {
   program: ParsedProgram;
   warnings: string[];

@@ -7,6 +7,8 @@ interface SubmitProgressProps {
 
 function statusLabel(kind: string): string {
   switch (kind) {
+    case "skipped":
+      return "Skipped";
     case "creating":
       return "Creating…";
     case "success":
@@ -20,6 +22,8 @@ function statusLabel(kind: string): string {
 
 function statusClass(kind: string): string {
   switch (kind) {
+    case "skipped":
+      return "text-gray-500";
     case "creating":
       return "text-blue-600 dark:text-blue-300";
     case "success":
@@ -35,10 +39,13 @@ export function SubmitProgress({ isFinished, onReset }: SubmitProgressProps) {
   const directories = useUploadStore((s) => s.directories);
   const routines = useUploadStore((s) => s.routines);
 
-  const total = routines.length;
-  const succeeded = routines.filter((r) => r.status.kind === "success").length;
-  const failed = routines.filter((r) => r.status.kind === "error").length;
-  const percent = total === 0 ? 0 : Math.round(((succeeded + failed) / total) * 100);
+  const submittedRoutines = routines.filter((r) => r.directoryId !== null);
+  const total = submittedRoutines.length;
+  const succeeded = submittedRoutines.filter((r) => r.status.kind === "success").length;
+  const failed = submittedRoutines.filter((r) => r.status.kind === "error").length;
+  const skipped = routines.filter((r) => r.status.kind === "skipped").length;
+  const percent =
+    total === 0 ? 0 : Math.round(((succeeded + failed) / total) * 100);
 
   return (
     <div className="space-y-4">
@@ -50,6 +57,7 @@ export function SubmitProgress({ isFinished, onReset }: SubmitProgressProps) {
           <span className="text-gray-500">
             {succeeded + failed} / {total}
             {failed > 0 ? ` · ${failed} failed` : ""}
+            {skipped > 0 ? ` · ${skipped} skipped` : ""}
           </span>
         </div>
         <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">

@@ -11,6 +11,12 @@ interface RoutineCardProps {
 
 function statusChip(routine: ImportRoutine) {
   switch (routine.status.kind) {
+    case "skipped":
+      return (
+        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          Skipped
+        </span>
+      );
     case "creating":
       return (
         <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300">

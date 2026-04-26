@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { DropZone } from "./components/DropZone.js";
 import { FilePreview } from "./components/FilePreview.js";
+import { PasteImportForm } from "./components/PasteImportForm.js";
 import { ParsedWorkoutPreview } from "./components/ParsedWorkoutPreview.js";
 import { OrganizePage } from "./components/OrganizePage.js";
 import { SubmitProgress } from "./components/SubmitProgress.js";
@@ -7,9 +9,16 @@ import { useFileUpload } from "./hooks/useFileUpload.js";
 import { ErrorAlert } from "@/shared/components/ErrorAlert.js";
 
 const STEP_KEYS = ["upload", "preview", "parsed", "organize", "pushing"] as const;
-const STEP_LABELS = ["Upload", "Preview", "Review", "Organize", "Submit"];
+const STEP_LABELS = ["Import", "Preview", "Review", "Organize", "Submit"];
+const IMPORT_MODES = [
+  { key: "file", label: "Upload file" },
+  { key: "text", label: "Paste text" },
+] as const;
+
+type ImportMode = (typeof IMPORT_MODES)[number]["key"];
 
 export function UploadPage() {
+  const [importMode, setImportMode] = useState<ImportMode>("file");
   const {
     step,
     file,
@@ -21,6 +30,7 @@ export function UploadPage() {
     error,
     pushResult,
     parseFile,
+    parseText,
     sendToParse,
     goToOrganize,
     submitToHevy,
@@ -31,9 +41,9 @@ export function UploadPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Upload Workout Program</h2>
+        <h2 className="text-2xl font-bold">Import Workout Program</h2>
         <p className="text-gray-500 text-sm mt-1">
-          Upload your trainer's spreadsheet and push it to Hevy
+          Upload a spreadsheet or paste programming text, review it, then push it to Hevy
         </p>
       </div>
 
@@ -70,7 +80,37 @@ export function UploadPage() {
 
       <ErrorAlert error={step === "parsed" || step === "organize" ? null : error} />
 
-      {step === "upload" && <DropZone onFileSelected={parseFile} />}
+      {step === "upload" && (
+        <div className="space-y-4">
+          <div className="inline-flex rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+            {IMPORT_MODES.map((mode) => (
+              <button
+                key={mode.key}
+                type="button"
+                onClick={() => setImportMode(mode.key)}
+                disabled={isLoading}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  importMode === mode.key
+                    ? "bg-white text-blue-700 shadow-sm dark:bg-gray-950 dark:text-blue-300"
+                    : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          {importMode === "file" ? (
+            <DropZone onFileSelected={parseFile} />
+          ) : (
+            <PasteImportForm
+              onSubmit={parseText}
+              isLoading={isLoading}
+              parseStatus={parseStatus}
+            />
+          )}
+        </div>
+      )}
 
       {step === "preview" && file && (
         <FilePreview
@@ -87,7 +127,7 @@ export function UploadPage() {
         <ParsedWorkoutPreview
           warnings={warnings}
           onContinue={goToOrganize}
-          onBack={() => setStep("preview")}
+          onBack={file ? () => setStep("preview") : reset}
         />
       )}
 

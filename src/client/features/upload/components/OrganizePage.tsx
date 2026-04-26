@@ -80,6 +80,9 @@ export function OrganizePage({ onBack, onSubmit }: OrganizePageProps) {
 
   const totalRoutines = routines.length;
   const unassignedRoutines = routinesByDirectory.get(null) || [];
+  const submitReadyCount = routines.filter(
+    (routine) => routine.directoryId !== null,
+  ).length;
 
   return (
     <div className="space-y-4">
@@ -87,7 +90,8 @@ export function OrganizePage({ onBack, onSubmit }: OrganizePageProps) {
         <div>
           <h3 className="text-lg font-semibold">Organize routines</h3>
           <p className="text-sm text-gray-500">
-            {totalRoutines} routine{totalRoutines === 1 ? "" : "s"} ready ·{" "}
+            {submitReadyCount} of {totalRoutines} routine
+            {totalRoutines === 1 ? "" : "s"} ready · {unassignedRoutines.length} skipped ·{" "}
             {directories.length} folder{directories.length === 1 ? "" : "s"}.
             Drag to rearrange, click names to rename.
           </p>
@@ -101,7 +105,7 @@ export function OrganizePage({ onBack, onSubmit }: OrganizePageProps) {
           </button>
           <button
             onClick={onSubmit}
-            disabled={totalRoutines === 0}
+            disabled={submitReadyCount === 0}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Submit to Hevy
@@ -112,6 +116,12 @@ export function OrganizePage({ onBack, onSubmit }: OrganizePageProps) {
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
           {error}
+        </div>
+      )}
+
+      {totalRoutines > 0 && submitReadyCount === 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          Move at least one routine out of Uncategorized to submit to Hevy.
         </div>
       )}
 

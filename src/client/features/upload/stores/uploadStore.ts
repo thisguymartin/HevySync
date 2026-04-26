@@ -33,6 +33,7 @@ export type ImportDirectory = {
 
 export type SubmitStatus =
   | { kind: "pending" }
+  | { kind: "skipped" }
   | { kind: "creating" }
   | { kind: "success"; hevyId: string }
   | { kind: "error"; message: string };

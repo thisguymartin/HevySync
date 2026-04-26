@@ -6,6 +6,11 @@ import { buildOrganizeState } from "../lib/buildOrganizeState.js";
 
 const SUBMIT_GAP_MS = 1000;
 
+type TextImportInput = {
+  programName: string;
+  text: string;
+};
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -82,6 +87,56 @@ export function useFileUpload() {
     setWarnings,
   ]);
 
+  const parseText = useCallback(async ({ programName, text }: TextImportInput) => {
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      setError("Paste workout plan text before parsing.");
+      return;
+    }
+
+    reset();
+    setIsLoading(true);
+    setParseStatus("Reading pasted plan...");
+    setError(null);
+    const timers: ReturnType<typeof setTimeout>[] = [
+      setTimeout(() => setParseStatus("Structuring routines..."), 700),
+      setTimeout(() => setParseStatus("Matching exercises..."), 2500),
+    ];
+
+    try {
+      const res = await apiFetch<{
+        program: ParsedProgram;
+        warnings: string[];
+      }>("/api/imports/parse", {
+        method: "POST",
+        body: JSON.stringify({
+          source: "text",
+          programName: programName.trim(),
+          text: trimmedText,
+        }),
+      });
+
+      setParsedProgram(res.program);
+      setWarnings(res.warnings || []);
+      setStep("parsed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Text parsing failed");
+    } finally {
+      timers.forEach(clearTimeout);
+      setIsLoading(false);
+      setParseStatus(null);
+    }
+  }, [
+    apiFetch,
+    reset,
+    setError,
+    setIsLoading,
+    setParsedProgram,
+    setParseStatus,
+    setStep,
+    setWarnings,
+  ]);
+
   const goToOrganize = useCallback(() => {
     const program = useUploadStore.getState().parsedProgram;
     if (!program) return;
@@ -99,16 +154,38 @@ export function useFileUpload() {
     const store = useUploadStore.getState();
     if (store.routines.length === 0) return;
 
+    const routinesToSubmit = store.routines.filter(
+      (routine) => routine.directoryId !== null,
+    );
+    if (routinesToSubmit.length === 0) {
+      setError("Move at least one routine out of Uncategorized to submit to Hevy.");
+      return;
+    }
+
     store.resetSubmitStatuses();
+    for (const routine of store.routines) {
+      if (routine.directoryId === null) {
+        useUploadStore.getState().setRoutineStatus(routine.id, { kind: "skipped" });
+      }
+    }
     setStep("pushing");
     setError(null);
     setPushResult(null);
 
     let firstHevyCall = true;
     const dispatchedFolderForDir = new Map<string, number>();
+    const failedDirectoryIds = new Set<string>();
+    const directoriesToSubmit = new Set(
+      routinesToSubmit
+        .map((routine) => routine.directoryId)
+        .filter((directoryId): directoryId is string => directoryId !== null),
+    );
 
     // Phase 1: create new folders for any directory that needs one.
     for (const directory of useUploadStore.getState().directories) {
+      if (!directoriesToSubmit.has(directory.id)) {
+        continue;
+      }
       if (directory.source === "existing" || directory.hevyFolderId !== null) {
         if (directory.hevyFolderId !== null) {
           dispatchedFolderForDir.set(directory.id, directory.hevyFolderId);
@@ -129,18 +206,32 @@ export function useFileUpload() {
         if (typeof folderId === "number") {
           useUploadStore.getState().setDirectoryHevyId(directory.id, folderId);
           dispatchedFolderForDir.set(directory.id, folderId);
+        } else {
+          failedDirectoryIds.add(directory.id);
+          setError(`Failed to create folder "${directory.name}": missing folder id`);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Folder create failed";
+        failedDirectoryIds.add(directory.id);
         setError(`Failed to create folder "${directory.name}": ${message}`);
       }
     }
 
     // Phase 2: create routines, each with the resolved folder_id.
-    for (const routine of useUploadStore.getState().routines) {
+    for (const routine of useUploadStore
+      .getState()
+      .routines.filter((candidate) => candidate.directoryId !== null)) {
       const folderId = routine.directoryId
         ? dispatchedFolderForDir.get(routine.directoryId) ?? null
         : null;
+
+      if (routine.directoryId && failedDirectoryIds.has(routine.directoryId)) {
+        useUploadStore.getState().setRoutineStatus(routine.id, {
+          kind: "error",
+          message: "Folder was not created, so this routine was not submitted.",
+        });
+        continue;
+      }
 
       useUploadStore.getState().setRoutineStatus(routine.id, { kind: "creating" });
       try {
@@ -174,12 +265,15 @@ export function useFileUpload() {
     }
 
     const finalRoutines = useUploadStore.getState().routines;
-    const succeeded = finalRoutines.filter((r) => r.status.kind === "success").length;
-    const failed = finalRoutines.filter((r) => r.status.kind === "error").length;
+    const submittedRoutines = finalRoutines.filter((r) => r.directoryId !== null);
+    const skipped = finalRoutines.filter((r) => r.status.kind === "skipped").length;
+    const succeeded = submittedRoutines.filter((r) => r.status.kind === "success").length;
+    const failed = submittedRoutines.filter((r) => r.status.kind === "error").length;
+    const skippedMessage = skipped > 0 ? ` ${skipped} skipped.` : "";
     setPushResult(
       failed > 0
-        ? `Created ${succeeded} of ${finalRoutines.length} routine(s); ${failed} failed.`
-        : `Successfully created ${succeeded} routine(s) in Hevy!`,
+        ? `Created ${succeeded} of ${submittedRoutines.length} routine(s); ${failed} failed.${skippedMessage}`
+        : `Successfully created ${succeeded} routine(s) in Hevy!${skippedMessage}`,
     );
   }, [apiFetch, setError, setPushResult, setStep]);
 
@@ -194,6 +288,7 @@ export function useFileUpload() {
     error,
     pushResult,
     parseFile,
+    parseText,
     sendToParse,
     goToOrganize,
     submitToHevy,

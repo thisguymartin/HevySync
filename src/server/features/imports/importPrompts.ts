@@ -2,7 +2,7 @@ import type { NormalizedWorkbook } from "./importTypes.js";
 
 export const IMPORT_SYSTEM_PROMPT = `You are a workout program parser for Hevy imports.
 
-You receive a deterministic extraction from a spreadsheet. Preserve the week, block, exercise, weight, reps, sets, and note data. Clean obvious spelling/casing issues only when the exercise identity is clear. Do not invent exercises, weeks, or sets.
+You receive either a deterministic extraction from a spreadsheet or pasted workout programming text. Preserve the week, block, exercise, weight, reps, sets, and note data. Clean obvious spelling/casing issues only when the exercise identity is clear. Do not invent exercises, weeks, or sets.
 
 Return only JSON that matches the provided schema.`;
 
@@ -19,6 +19,38 @@ Rules:
 
 Extracted workbook:
 ${JSON.stringify(workbook)}`;
+}
+
+export function buildTextImportUserPrompt(params: {
+  programName?: string;
+  text: string;
+}): string {
+  const requestedName = params.programName?.trim();
+
+  return `Normalize this pasted workout plan into a Hevy import draft.
+
+Rules:
+- Treat the input as free-form trainer programming text, markdown, copied notes, or loose tables.
+- If a program name is provided below, use it unless the pasted text clearly contains a better program name.
+- If the plan has days, sessions, or workouts but no explicit weeks, create Week 1 and put each session in its own block.
+- If the plan has weeks, preserve their week numbers.
+- Keep weights exactly as written in "weight"; do not convert units in your response.
+- Keep percentage loads like "70%" in "weight".
+- Keep reps as written, including ranges like "8-12".
+- Keep sets as written, including formats like "3x8" by splitting sets into "3" and reps into "8".
+- Preserve rest periods, supersets, tempo, RPE, and coaching cues in notes when they are present.
+- Do not invent exercises, weeks, workouts, sets, reps, or weights.
+- Use empty strings for missing weight, reps, sets, or notes fields.
+- Use false for isSuperset and null for supersetGroup/restSeconds when not specified.
+- Add warnings for missing or ambiguous structure instead of filling in made-up details.
+- Set sourceFileName to "Pasted workout plan".
+- Use sourceSheet "Pasted text" for generated weeks.
+
+Provided program name:
+${requestedName || "(none)"}
+
+Pasted workout plan:
+${params.text}`;
 }
 
 const parsedExerciseSchema = {

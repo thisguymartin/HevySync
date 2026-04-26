@@ -28,7 +28,7 @@ export function UnassignedBin({ routines, isSubmitting }: UnassignedBinProps) {
             Uncategorized
           </span>
           <span className="text-xs text-gray-500">
-            {routines.length} routine{routines.length === 1 ? "" : "s"} (no folder)
+            {routines.length} routine{routines.length === 1 ? "" : "s"} skipped
           </span>
         </div>
       </div>
@@ -47,7 +47,7 @@ export function UnassignedBin({ routines, isSubmitting }: UnassignedBinProps) {
         </SortableContext>
         {routines.length === 0 && (
           <div className="rounded-md border border-dashed border-gray-300 px-3 py-4 text-center text-xs text-gray-500 dark:border-gray-700">
-            Drop routines here to leave them outside any folder
+            Drop routines here to skip them during submit
           </div>
         )}
       </div>

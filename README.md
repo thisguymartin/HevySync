@@ -5,6 +5,7 @@ Personal sync tool for [Hevy](https://www.hevyapp.com/). Upload a workout spread
 ## Features
 
 - Spreadsheet import for `.xlsx`, `.xls`, and `.csv`
+- Free-form pasted workout plan import
 - Server-side workbook normalization for multi-sheet and horizontal week layouts
 - OpenAI-assisted parsing with deterministic fallback
 - Hevy exercise matching and custom exercise creation
@@ -76,7 +77,7 @@ npm run deploy
 | `GET/POST` | `/api/hevy/workouts` | List or create workouts |
 | `GET/PUT` | `/api/hevy/workouts/:id` | Read or update a workout |
 | `GET` | `/api/hevy/workouts/events` | Read Hevy workout sync events |
-| `POST` | `/api/imports/parse` | Upload and parse a workout file |
+| `POST` | `/api/imports/parse` | Upload a workout file or parse pasted workout text |
 | `POST` | `/api/imports/push-routines` | Create parsed routines in Hevy |
 
 All Hevy API calls use server-side secrets; the browser does not store a Hevy API key.
